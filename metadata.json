@@ -1,0 +1,6 @@
+{
+  "name": "مسابقة حفظ العدد π",
+  "description": "تطبيق لمسابقة حفظ أرقام العدد باي (Pi) للطلاب، مع لوحة صدارة وتحليل للنتائج.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

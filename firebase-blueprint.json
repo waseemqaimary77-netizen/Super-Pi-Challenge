@@ -1,0 +1,23 @@
+{
+  "entities": {
+    "Result": {
+      "title": "Contest Result",
+      "description": "A student's result in the Pi digits contest.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Student name" },
+        "correctDigits": { "type": "number", "description": "Number of correct digits" },
+        "accuracy": { "type": "number", "description": "Accuracy percentage" },
+        "time": { "type": "number", "description": "Time taken in seconds" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp" }
+      },
+      "required": ["name", "correctDigits", "accuracy", "time", "createdAt"]
+    }
+  },
+  "firestore": {
+    "leaderboard": {
+      "schema": "Result",
+      "description": "Collection of all student results for the leaderboard."
+    }
+  }
+}

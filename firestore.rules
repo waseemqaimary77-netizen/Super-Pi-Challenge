@@ -1,0 +1,34 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidResult(data) {
+      return data.keys().hasAll(['name', 'correctDigits', 'accuracy', 'time', 'createdAt'])
+          && data.keys().size() == 5
+          && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+          && data.correctDigits is number && data.correctDigits >= 0
+          && data.accuracy is number && data.accuracy >= 0 && data.accuracy <= 100
+          && data.time is number && data.time >= 0
+          && data.createdAt == request.time;
+    }
+
+    match /leaderboard/{resultId} {
+      allow list: if true; // Publicly viewable leaderboard
+      allow get: if true;
+      allow create: if isValidId(resultId) && isValidResult(request.resource.data);
+      allow update, delete: if false; // No updates or deletions by students
+    }
+  }
+}
