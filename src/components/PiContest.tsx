@@ -19,7 +19,7 @@ export const PiContest: React.FC = () => {
     accuracy: number;
     firstErrorPos: number | null;
     rating: string;
-    diff: Array<{ char: string; expected: string; isCorrect: boolean }>;
+    diff: Array<{ char: string; expected: string; isCorrect: boolean; isSkip?: boolean }>;
   } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -56,29 +56,49 @@ export const PiContest: React.FC = () => {
   };
 
   const analyzeResult = () => {
-    const userDigits = input.replace(/ /g, '');
-    const realDigits = PI_DIGITS.slice(0, userDigits.length);
-    
+    let piPointer = 0;
     let correctCount = 0;
+    let wrongCount = 0;
     let firstErrorPos = null;
-    const diff: Array<{ char: string; expected: string; isCorrect: boolean }> = [];
+    const diff: Array<{ char: string; expected: string; isCorrect: boolean; isSkip?: boolean }> = [];
 
-    for (let i = 0; i < userDigits.length; i++) {
-      const isCorrect = userDigits[i] === realDigits[i];
-      if (isCorrect) {
-        correctCount++;
+    // Iterate through the raw input to handle spaces as skips
+    for (let i = 0; i < input.length; i++) {
+      const char = input[i];
+      const expected = PI_DIGITS[piPointer];
+      
+      if (!expected) break; // Safety check
+
+      if (char === ' ') {
+        // Treat as a skip
+        diff.push({ 
+          char: '_', 
+          expected: expected, 
+          isCorrect: false, 
+          isSkip: true 
+        });
+        if (firstErrorPos === null) firstErrorPos = piPointer;
+        wrongCount++;
+        piPointer++;
       } else {
-        if (firstErrorPos === null) firstErrorPos = i;
+        const isCorrect = char === expected;
+        if (isCorrect) {
+          if (/\d/.test(char)) correctCount++;
+        } else {
+          wrongCount++;
+          if (firstErrorPos === null) firstErrorPos = piPointer;
+        }
+        diff.push({ 
+          char, 
+          expected: expected, 
+          isCorrect 
+        });
+        piPointer++;
       }
-      diff.push({ 
-        char: userDigits[i], 
-        expected: realDigits[i], 
-        isCorrect 
-      });
     }
 
-    const wrongCount = userDigits.length - correctCount;
-    const accuracy = userDigits.length > 0 ? (correctCount / userDigits.length) * 100 : 0;
+    const totalAttempted = piPointer;
+    const accuracy = totalAttempted > 0 ? (correctCount / totalAttempted) * 100 : 0;
     const rating = RATING_AR(accuracy, correctCount);
 
     setResult({
@@ -185,7 +205,7 @@ export const PiContest: React.FC = () => {
       {isStarted && !isFinished && (
         <div className="flex flex-col h-full gap-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
-             <div className="flex gap-4">
+             <div className="flex gap-3">
                <button
                   onClick={handleFinish}
                   className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-red-100"
@@ -194,15 +214,23 @@ export const PiContest: React.FC = () => {
                   إنهاء التحدي
                 </button>
                 <button
+                  onClick={() => setInput(prev => prev + ' ')}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-blue-100"
+                  title="تجاوز هذا الرقم"
+                >
+                  <RefreshCcw className="w-5 h-5" />
+                  تجاوز رقم
+                </button>
+                <button
                   onClick={handleReset}
                   className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-3 rounded-2xl font-bold transition-all"
                 >
-                  إلغاء المسابقة
+                  إلغاء
                 </button>
              </div>
              <div className="bg-white px-6 py-3 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-2">
                 <Timer className="w-5 h-5 text-blue-500 animate-pulse" />
-                <span className="text-slate-500 text-sm font-bold uppercase tracking-widest">الوقت يتم حسابه في الخلفية...</span>
+                <span className="text-slate-500 text-sm font-bold uppercase tracking-widest">الوقت يتم حسابه...</span>
              </div>
           </div>
 
@@ -214,9 +242,28 @@ export const PiContest: React.FC = () => {
               className="w-full h-80 p-8 bg-white rounded-3xl border-2 border-dashed border-slate-200 text-3xl font-mono leading-relaxed text-slate-700 placeholder:text-slate-300 resize-none focus:outline-none focus:border-blue-400 transition-all shadow-sm"
               autoFocus
             />
-            <div className="absolute bottom-6 left-6 flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-sm font-bold border border-blue-100 shadow-sm">
-               <Target className="w-4 h-4" />
-               <span>عدد الأرقام الحالي: {input.length}</span>
+            {/* Floating Action Button for Skip */}
+            <div className="absolute bottom-6 right-6 flex flex-col items-end gap-3">
+              <button
+                onClick={() => setInput(prev => prev + ' ')}
+                className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-2xl font-black shadow-2xl shadow-orange-200 transition-all flex items-center gap-3 active:scale-95 group/skip"
+                title="تجاوز هذا الرقم"
+              >
+                <div className="bg-white/20 p-2 rounded-lg group-hover/skip:rotate-12 transition-transform">
+                  <RefreshCcw className="w-6 h-6 rotate-45" />
+                </div>
+                <div className="flex flex-col items-start leading-tight">
+                  <span className="text-lg">تجاوز رقم skip</span>
+                  <span className="text-[10px] opacity-80 font-medium">اضغط هنا إذا نسيت الرقم</span>
+                </div>
+              </button>
+            </div>
+            
+            <div className="absolute bottom-6 left-6 flex items-center gap-4">
+               <div className="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-sm font-bold border border-blue-100 shadow-sm flex items-center gap-2">
+                  <Target className="w-4 h-4" />
+                  <span>عدد الأرقام: {input.length}</span>
+               </div>
             </div>
           </div>
         </div>
@@ -274,19 +321,22 @@ export const PiContest: React.FC = () => {
                 <AlertCircle className="w-5 h-5 text-blue-500" />
                 تحليل الأخطاء (التصحيح)
              </h4>
-             <div className="flex flex-wrap gap-x-3 gap-y-12 p-6 bg-slate-50 rounded-2xl border border-slate-100 font-mono text-3xl leading-none" dir="ltr">
+             <div className="flex flex-wrap gap-x-3 gap-y-12 p-8 bg-slate-50 rounded-3xl border border-slate-100 font-mono text-3xl leading-none" dir="ltr">
                 {result.diff.map((item, idx) => (
                   <div key={idx} className="relative flex flex-col items-center min-w-[1ch]">
                     <span className={cn(
-                      "font-bold",
-                      item.isCorrect ? "text-green-600" : "text-red-500"
+                      "font-bold transition-colors",
+                      item.isCorrect ? "text-green-600" : (item.isSkip ? "text-blue-400" : "text-red-500")
                     )}>
                       {item.char}
                     </span>
                     {!item.isCorrect && (
                       <>
-                        <div className="absolute -bottom-1 w-full h-[3px] bg-red-400 rounded-full" />
-                        <span className="absolute -bottom-10 text-xl font-bold text-blue-500">
+                        <div className={cn(
+                          "absolute -bottom-1 w-full h-[3px] rounded-full",
+                          item.isSkip ? "bg-blue-300" : "bg-red-400"
+                        )} />
+                        <span className="absolute -bottom-9 text-lg font-bold text-slate-400 opacity-80">
                           {item.expected}
                         </span>
                       </>
