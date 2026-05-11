@@ -7,11 +7,13 @@
       "properties": {
         "name": { "type": "string", "description": "Student name" },
         "correctDigits": { "type": "number", "description": "Number of correct digits" },
+        "wrongCount": { "type": "number", "description": "Number of wrong digits" },
         "accuracy": { "type": "number", "description": "Accuracy percentage" },
         "time": { "type": "number", "description": "Time taken in seconds" },
+        "type": { "type": "string", "enum": ["practice", "super"], "description": "Contest type" },
         "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp" }
       },
-      "required": ["name", "correctDigits", "accuracy", "time", "createdAt"]
+      "required": ["name", "correctDigits", "accuracy", "time", "type", "createdAt"]
     }
   },
   "firestore": {

@@ -21,7 +21,7 @@ export default function App() {
         <div className="flex flex-col items-center md:items-start text-center md:text-right">
           <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
             <span className="bg-blue-600 text-white w-10 h-10 rounded-lg flex items-center justify-center font-serif text-2xl shadow-lg shadow-blue-200">π</span>
-            مسابقة حفظ العدد باي
+            مسابقة السوبر باي
           </h1>
           <p className="text-slate-500 text-sm mt-1">تحدي الذكاء والسرعة لطلاب الحصاد بأدارة دائرة الرياضيات</p>
         </div>
@@ -49,7 +49,7 @@ export default function App() {
              </div>
           </div>
           <div className="text-xs uppercase tracking-wider text-slate-600 flex items-center gap-1">
-             بإشراف رئيس دائرة الرياضيات: <span className="font-black text-slate-900 text-lg underline decoration-blue-500 decoration-2 underline-offset-4">أستاذ مصعب</span>
+             بإشراف رئيس دائرة الرياضيات: <span className="font-black text-slate-900 text-lg underline decoration-blue-500 decoration-2 underline-offset-4">أستاذ مصعب فشافشة</span>
           </div>
         </div>
       </header>

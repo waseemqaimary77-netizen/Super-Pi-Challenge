@@ -15,12 +15,13 @@ service cloud.firestore {
     }
 
     function isValidResult(data) {
-      return data.keys().hasAll(['name', 'correctDigits', 'accuracy', 'time', 'createdAt'])
-          && data.keys().size() == 5
+      return data.keys().hasAll(['name', 'correctDigits', 'accuracy', 'time', 'type', 'createdAt'])
+          && data.keys().size() >= 6
           && data.name is string && data.name.size() > 0 && data.name.size() <= 100
           && data.correctDigits is number && data.correctDigits >= 0
           && data.accuracy is number && data.accuracy >= 0 && data.accuracy <= 100
           && data.time is number && data.time >= 0
+          && data.type in ['practice', 'super']
           && data.createdAt == request.time;
     }
 

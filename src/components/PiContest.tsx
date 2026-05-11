@@ -9,6 +9,7 @@ import { cn } from '../lib/utils';
 export const PiContest: React.FC = () => {
   const [name, setName] = useState('');
   const [input, setInput] = useState('');
+  const [contestType, setContestType] = useState<'practice' | 'super'>('super');
   const [isStarted, setIsStarted] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
   const [time, setTime] = useState(0);
@@ -18,6 +19,7 @@ export const PiContest: React.FC = () => {
     accuracy: number;
     firstErrorPos: number | null;
     rating: string;
+    diff: Array<{ char: string; expected: string; isCorrect: boolean }>;
   } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -59,13 +61,20 @@ export const PiContest: React.FC = () => {
     
     let correctCount = 0;
     let firstErrorPos = null;
+    const diff: Array<{ char: string; expected: string; isCorrect: boolean }> = [];
 
     for (let i = 0; i < userDigits.length; i++) {
-      if (userDigits[i] === realDigits[i]) {
+      const isCorrect = userDigits[i] === realDigits[i];
+      if (isCorrect) {
         correctCount++;
       } else {
         if (firstErrorPos === null) firstErrorPos = i;
       }
+      diff.push({ 
+        char: userDigits[i], 
+        expected: realDigits[i], 
+        isCorrect 
+      });
     }
 
     const wrongCount = userDigits.length - correctCount;
@@ -77,13 +86,14 @@ export const PiContest: React.FC = () => {
       wrongCount,
       accuracy,
       firstErrorPos,
-      rating
+      rating,
+      diff
     });
 
-    saveToFirebase(correctCount, accuracy);
+    saveToFirebase(correctCount, accuracy, wrongCount);
   };
 
-  const saveToFirebase = async (correctCount: number, accuracy: number) => {
+  const saveToFirebase = async (correctCount: number, accuracy: number, wrongCount: number) => {
     if (correctCount === 0 && accuracy === 0) return;
     
     setIsSaving(true);
@@ -92,8 +102,10 @@ export const PiContest: React.FC = () => {
       await addDoc(collection(db, path), {
         name: name.trim(),
         correctDigits: correctCount,
+        wrongCount: wrongCount,
         accuracy: accuracy,
         time: parseFloat(time.toFixed(1)),
+        type: contestType,
         createdAt: serverTimestamp()
       });
     } catch (error) {
@@ -124,19 +136,44 @@ export const PiContest: React.FC = () => {
             <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-3xl font-bold mx-auto mb-6 shadow-lg shadow-blue-100">
               π
             </div>
-            <h2 className="text-3xl font-bold text-slate-800 mb-3">مرحباً بك في المسابقة</h2>
-            <p className="text-slate-500">سجل اسمك لتبدأ في تحدي حفظ العدد باي الرقمي</p>
+            <h2 className="text-3xl font-bold text-slate-800 mb-3">مرحباً بك في مسابقة π</h2>
+            <p className="text-slate-500">سجل اسمك واختر نوع المسابقة للبدء</p>
           </div>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="أدخل اسمك هنا..."
-            className="w-full px-6 py-4 rounded-2xl border-2 border-slate-100 focus:border-blue-400 focus:outline-none transition-all mb-8 text-center text-xl font-medium"
-          />
+          
+          <div className="space-y-6">
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="أدخل اسمك هنا..."
+              className="w-full px-6 py-4 rounded-2xl border-2 border-slate-100 focus:border-blue-400 focus:outline-none transition-all text-center text-xl font-medium"
+            />
+
+            <div className="flex p-1 bg-slate-100 rounded-2xl">
+              <button
+                onClick={() => setContestType('super')}
+                className={cn(
+                  "flex-1 py-3 rounded-xl font-bold transition-all text-sm",
+                  contestType === 'super' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                )}
+              >
+                مسابقة السوبر باي 🏆
+              </button>
+              <button
+                onClick={() => setContestType('practice')}
+                className={cn(
+                  "flex-1 py-3 rounded-xl font-bold transition-all text-sm",
+                  contestType === 'practice' ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                )}
+              >
+                للتجربة والتدريب 🧪
+              </button>
+            </div>
+          </div>
+
           <button
             onClick={handleStart}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-5 rounded-2xl shadow-xl shadow-blue-100 transition-all flex items-center justify-center gap-3 text-lg group"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-5 rounded-2xl shadow-xl shadow-blue-100 transition-all flex items-center justify-center gap-3 text-lg group mt-8"
           >
             <Play className="fill-current w-5 h-5 group-hover:scale-110 transition-transform" />
             ابدأ التحدي الآن
@@ -160,11 +197,12 @@ export const PiContest: React.FC = () => {
                   onClick={handleReset}
                   className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-3 rounded-2xl font-bold transition-all"
                 >
-                  إعادة تعيين
+                  إلغاء المسابقة
                 </button>
              </div>
-             <div className="text-4xl font-mono font-bold text-slate-800 bg-white px-8 py-3 rounded-2xl border border-slate-200 shadow-sm">
-                {Math.floor(time / 60).toString().padStart(2, '0')}:{(time % 60).toFixed(2).padStart(5, '0')}
+             <div className="bg-white px-6 py-3 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-2">
+                <Timer className="w-5 h-5 text-blue-500 animate-pulse" />
+                <span className="text-slate-500 text-sm font-bold uppercase tracking-widest">الوقت يتم حسابه في الخلفية...</span>
              </div>
           </div>
 
@@ -227,10 +265,36 @@ export const PiContest: React.FC = () => {
                 <RefreshCcw className="w-5 h-5" />
                 تحدي جديد
               </button>
-              <p className="text-[10px] text-blue-200 text-center uppercase tracking-widest">
-                تم حفظ نتيجتك في لوحة الصدارة
-              </p>
             </div>
+          </div>
+
+          {/* Diff View */}
+          <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm space-y-6">
+             <h4 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-blue-500" />
+                تحليل الأخطاء (التصحيح)
+             </h4>
+             <div className="flex flex-wrap gap-x-3 gap-y-12 p-6 bg-slate-50 rounded-2xl border border-slate-100 font-mono text-3xl leading-none" dir="ltr">
+                {result.diff.map((item, idx) => (
+                  <div key={idx} className="relative flex flex-col items-center min-w-[1ch]">
+                    <span className={cn(
+                      "font-bold",
+                      item.isCorrect ? "text-green-600" : "text-red-500"
+                    )}>
+                      {item.char}
+                    </span>
+                    {!item.isCorrect && (
+                      <>
+                        <div className="absolute -bottom-1 w-full h-[3px] bg-red-400 rounded-full" />
+                        <span className="absolute -bottom-10 text-xl font-bold text-blue-500">
+                          {item.expected}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                ))}
+                {result.diff.length === 0 && <p className="text-slate-400 italic text-sm font-sans mx-auto">لم يتم إدخال أي أرقام</p>}
+             </div>
           </div>
         </motion.div>
       )}
