@@ -24,6 +24,7 @@ export const PiContest: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (isStarted && !isFinished) {
@@ -37,6 +38,12 @@ export const PiContest: React.FC = () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [isStarted, isFinished]);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
+    }
+  }, [input]);
 
   const handleStart = () => {
     if (!name.trim()) {
@@ -236,6 +243,7 @@ export const PiContest: React.FC = () => {
 
           <div className="relative flex-1 group">
             <textarea
+              ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="ابدأ بكتابة الأرقام هنا بعد 3.14..."
